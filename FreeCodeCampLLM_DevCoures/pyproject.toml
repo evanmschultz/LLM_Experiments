@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "llm-dev-course"
+version = "0.1.0"
+description = ""
+authors = ["Your Name <you@example.com>"]
+readme = "README.md"
+packages = [{include = "llm_dev_course"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+langchain = "^0.0.270"
+chainlit = "^0.6.2"
+chromadb = "^0.4.6"
+pypdf = "^3.15.2"
+tiktoken = "^0.4.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
