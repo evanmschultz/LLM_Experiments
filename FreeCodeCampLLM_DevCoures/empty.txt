@@ -1,0 +1,33 @@
+import keras
+from keras.models import Sequential
+from keras.layers import Conv2D, MaxPooling2D, Flatten, Dense
+
+# create a sequential model
+model = Sequential()
+
+# add convolutional layer
+model.add(Conv2D(32, (3, 3), activation=relu, input_shape=(64, 64, 3)))
+
+# add pooling layer
+model.add(MaxPooling2D(pool_size=(2, 2)))
+
+# add another convolutional layer
+model.add(Conv2D(32, (3, 3), activation=relu))
+
+# add another pooling layer
+model.add(MaxPooling2D(pool_size=(2, 2)))
+
+# flatten the tensor output
+model.add(Flatten())
+
+# add a dense layer
+model.add(Dense(units=128, activation=relu))
+
+# add output layer
+model.add(Dense(units=1, activation=sigmoid))
+
+# compile the model
+model.compile(optimizer=adam, loss=binary_crossentropy, metrics=[accuracy])
+
+# train the model for 4 epochs
+model.fit(X_train, y_train, epochs=4)
