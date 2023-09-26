@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<title>Postulate Chat</title>
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<link
+			href="//fonts.googleapis.com/css?family=Raleway:400,300,600"
+			rel="stylesheet"
+			type="text/css"
+		/>
+		<link rel="stylesheet" href="/static/css/normalize.css" />
+		<link rel="stylesheet" href="/static/css/skeleton.css" />
+		<link rel="icon" type="image/png" href="/static/assets/Phi_lc.svg" />
+		<link rel="stylesheet" href="/static/css/prism-atom-dark.css" />
+	</head>
+	<body>
+		<div class="container">
+			<!-- Sidebar -->
+			<aside class="sidebar">
+				<!-- Sidebar Header -->
+				<div class="sidebar-header">
+					<h1 style="font-size: x-large">Postulate Chat</h1>
+				</div>
+
+				<!-- Sidebar Menu -->
+				<div>
+					<ul>
+						<li>
+							<a href="#">Settings</a>
+						</li>
+						<li>
+							<a href="#">About</a>
+						</li>
+						<li>
+							<a href="#">Help</a>
+						</li>
+					</ul>
+				</div>
+
+				<!-- Sidebar Footer -->
+				<div class="sidebar-footer">
+					<p style="padding: 0; margin: 0">
+						Code by Evan Schultz:
+						<a href="https://www.postulate.tech">postulate.tech</a>
+					</p>
+				</div>
+			</aside>
+
+			<!-- Main Chat Window -->
+			<main>
+				<!-- Chat Messages Conditionally Rendered by JS -->
+				<div
+					id="chat-messages"
+					class="chat-messages"
+					style="overflow-y: scroll; max-height: calc(100% - 50px)"
+				></div>
+
+				<!-- Input Field -->
+				<div class="fixed-bottom-container">
+					<form id="chat-form" class="input-form">
+						<textarea
+							id="chat-input"
+							name="chat-input"
+							class="chat-input"
+							placeholder="Type your message here. Press `cmd` or `cntrl` + `enter` to send..."
+						></textarea>
+						<button type="button" onclick="sendMessage()">
+							Send
+						</button>
+					</form>
+				</div>
+			</main>
+		</div>
+
+		<script src="static/js/prism.js"></script>
+		<script src="static/js/chat.js"></script>
+	</body>
+</html>
