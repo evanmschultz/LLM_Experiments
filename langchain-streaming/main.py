@@ -1,14 +1,10 @@
 import asyncio
-from typing import AsyncIterable
-
-from fastapi import FastAPI
+from fastapi import FastAPI, WebSocket, Depends
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
 from langchain.callbacks import AsyncIteratorCallbackHandler
 from langchain.chat_models import ChatOpenAI
 from langchain.schema import HumanMessage
 from pydantic import BaseModel
-
 
 app = FastAPI()
 app.add_middleware(
@@ -24,7 +20,18 @@ class Message(BaseModel):
     content: str
 
 
-async def send_message(content: str) -> AsyncIterable[str]:
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    await websocket.accept()
+    while True:
+        data = await websocket.receive_text()
+        message = Message(content=data)
+        generator = send_message(message.content)
+        async for message in generator:
+            await websocket.send_text(message)
+
+
+async def send_message(content: str):
     callback = AsyncIteratorCallbackHandler()
     model = ChatOpenAI(
         streaming=True,
@@ -44,10 +51,7 @@ async def send_message(content: str) -> AsyncIterable[str]:
     finally:
         callback.done.set()
 
+    # Send a special message to indicate the end of the response
+    yield '{"end_of_response": true}'
+
     await task
-
-
-@app.post("/stream_chat/")
-async def stream_chat(message: Message):
-    generator = send_message(message.content)
-    return StreamingResponse(generator, media_type="text/event-stream")

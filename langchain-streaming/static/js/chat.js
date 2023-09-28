@@ -17,6 +17,7 @@ function formatCodeBlocks(inputString) {
 }
 
 function formatAllCodeBlocks() {
+	console.log('format code blocks called');
 	/// Select all message blocks with the class 'message-content'
 	const messageBlocks = document.querySelectorAll('.message-content');
 	// Loop through each message block to format its content
@@ -29,9 +30,12 @@ function formatAllCodeBlocks() {
 }
 
 let currentBotContainer = null;
+// Scroll the chat messages div to the bottom (for scrolling function)
+const chatMessages = document.getElementById('chat-messages');
 
 // Function to scroll the chat messages div to the bottom
 function scrollToBottom(element) {
+	console.log('scrollToBottom');
 	element.scrollTop = element.scrollHeight;
 }
 
@@ -64,43 +68,68 @@ async function sendMessage(event) {
 	currentBotContainer.style.padding = '10px';
 	chatMessages.appendChild(currentBotContainer);
 
-	// Send an AJAX POST request to send the message
-	let response = await fetch('http://localhost:8000/stream_chat/', {
-		method: 'POST',
-		headers: {
-			'Content-Type': 'application/json'
-		},
-		body: JSON.stringify({ content: userInput })
-	});
+	// Send the user's message over the WebSocket
+	websocket.send(userInput);
+}
 
-	// Stream and process the response
-	let reader = response.body.getReader();
-	let decoder = new TextDecoder('utf-8');
+let websocket = new WebSocket('ws://localhost:8000/ws');
 
-	reader.read().then(function processResult(result) {
-		if (result.done) {
-			// Nullify the currentBotContainer after the stream ends
-			currentBotContainer = null;
-			formatAllCodeBlocks();
-			return;
+websocket.onopen = function (event) {
+	console.log('WebSocket is open now.');
+};
+
+websocket.onclose = function (event) {
+	// Format all code blocks again since new message has been received
+	formatAllCodeBlocks();
+	scrollToBottom(chatMessages);
+
+	console.log('WebSocket is closed now.');
+};
+
+websocket.onmessage = function (event) {
+	console.log('WebSocket message received:', event);
+
+	// Check for the special message indicating the end of the response
+	let messageData;
+	try {
+		messageData = JSON.parse(event.data);
+	} catch (e) {
+		// Not a JSON object, just proceed
+	}
+
+	if (messageData && messageData.end_of_response) {
+		// Special message received, nullify the currentBotContainer
+		currentBotContainer = null;
+
+		// Optionally close the WebSocket if you desire
+		// websocket.close();
+
+		// Format all code blocks since the AI response is complete
+		formatAllCodeBlocks();
+		scrollToBottom(chatMessages);
+	} else {
+		// If currentBotContainer is null, create a new container for the AI's response
+		if (!currentBotContainer) {
+			currentBotContainer = document.createElement('p');
+			currentBotContainer.className = 'message-content';
+			currentBotContainer.innerHTML = '<strong>AI:</strong> ';
+			currentBotContainer.style.border = '1px solid #ccc';
+			currentBotContainer.style.padding = '10px';
+			chatMessages.appendChild(currentBotContainer);
 		}
 
-		// Decode and append the bot's message to the existing container
-		let token = decoder.decode(result.value);
-		currentBotContainer.innerHTML += token;
+		// Append the received message to the AI's response container
+		currentBotContainer.innerHTML += event.data;
 
 		// Scroll to the bottom
-		chatMessages.scrollTop = chatMessages.scrollHeight;
-
-		return reader.read().then(processResult);
-	});
-}
+		// scrollToBottom(chatMessages);
+	}
+};
 
 document.addEventListener('DOMContentLoaded', function () {
 	formatAllCodeBlocks();
 
 	// Scroll the chat messages div to the bottom
-	const chatMessages = document.getElementById('chat-messages');
 	scrollToBottom(chatMessages);
 
 	// Get chat input and chat messages elements by their IDs
