@@ -1,8 +1,33 @@
-// Function to format code blocks in a given string
+// // Function to format code blocks in a given string
+// function formatCodeBlocks(inputString) {
+// 	let formattedString = inputString.replace(
+// 		/```(\w+)?\n([\s\S]*?)```/gm,
+// 		function (_, lang, code) {
+// 			return `<pre><code class="language-${
+// 				lang || 'none'
+// 			}">${code}</code></pre>`;
+// 		}
+// 	);
+
+// 	// Replace inline code wrapped in single backticks with <code> tags
+// 	formattedString = formattedString.replace(/`([^`]+)`/gm, '<code>$1</code>');
+
+// 	// Return the formatted string
+// 	return formattedString;
+// }
+
 function formatCodeBlocks(inputString) {
-	let formattedString = inputString.replace(
-		/```(\w+)?\n([\s\S]*?)```/gm,
+	// First replace all newlines and tabs with HTML entities
+	let tempString = inputString
+		.replace(/\n/g, '<br>')
+		.replace(/\t/g, '&emsp;');
+
+	// Then revert those HTML entities within triple backtick code blocks
+	tempString = tempString.replace(
+		/```(\w+)?<br>([\s\S]*?)```/gm,
 		function (_, lang, code) {
+			// Revert the <br> and &emsp; within the code block back to \n and \t
+			code = code.replace(/<br>/g, '\n').replace(/&emsp;/g, '\t');
 			return `<pre><code class="language-${
 				lang || 'none'
 			}">${code}</code></pre>`;
@@ -10,10 +35,13 @@ function formatCodeBlocks(inputString) {
 	);
 
 	// Replace inline code wrapped in single backticks with <code> tags
-	formattedString = formattedString.replace(/`([^`]+)`/gm, '<code>$1</code>');
+	tempString = tempString.replace(/`([^`]+)`/gm, function (_, code) {
+		// Revert the <br> and &emsp; within the inline code back to \n and \t
+		code = code.replace(/<br>/g, '\n').replace(/&emsp;/g, '\t');
+		return `<code>${code}</code>`;
+	});
 
-	// Return the formatted string
-	return formattedString;
+	return tempString;
 }
 
 function formatAllCodeBlocks() {
@@ -27,6 +55,13 @@ function formatAllCodeBlocks() {
 		block.innerHTML = formattedContent; // Replace original content with formatted content
 	});
 	Prism.highlightAll();
+}
+
+function replaceWhiteSpace(str) {
+	return str
+		.replace(/\n/g, '<br>')
+		.replace(/\t/g, '&emsp;')
+		.replace(/  /g, ' &nbsp;'); // Replace spaces if needed
 }
 
 let currentBotContainer = null;
@@ -52,10 +87,15 @@ async function sendMessage(event) {
 	const userInput = chatInput.value;
 	chatInput.value = '';
 
+	// Reset the chat input height to its original size
+	chatInput.style.height = 'auto';
+
 	// Create and append the user's message immediately for a responsive UI
 	const userMessage = document.createElement('p');
 	userMessage.className = 'message-content';
-	userMessage.innerHTML = `<strong>You:</strong> ${userInput}`;
+	userMessage.innerHTML = `<strong>You:</strong> ${replaceWhiteSpace(
+		userInput
+	)}`;
 	userMessage.style.border = '1px solid #ccc';
 	userMessage.style.padding = '10px';
 	chatMessages.appendChild(userMessage);
@@ -70,6 +110,9 @@ async function sendMessage(event) {
 
 	// Send the user's message over the WebSocket
 	websocket.send(userInput);
+
+	// Format all code blocks again since new message has been received
+	formatAllCodeBlocks();
 }
 
 let websocket = new WebSocket('ws://localhost:8000/ws');
@@ -102,11 +145,11 @@ websocket.onmessage = function (event) {
 		currentBotContainer = null;
 
 		// Optionally close the WebSocket if you desire
-		// websocket.close();
+		websocket.close();
 
 		// Format all code blocks since the AI response is complete
-		formatAllCodeBlocks();
-		scrollToBottom(chatMessages);
+		// formatAllCodeBlocks();
+		// scrollToBottom(chatMessages);
 	} else {
 		// If currentBotContainer is null, create a new container for the AI's response
 		if (!currentBotContainer) {
@@ -119,7 +162,7 @@ websocket.onmessage = function (event) {
 		}
 
 		// Append the received message to the AI's response container
-		currentBotContainer.innerHTML += event.data;
+		currentBotContainer.innerHTML += replaceWhiteSpace(event.data);
 
 		// Scroll to the bottom
 		// scrollToBottom(chatMessages);
